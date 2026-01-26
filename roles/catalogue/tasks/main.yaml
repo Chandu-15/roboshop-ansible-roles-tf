@@ -1,0 +1,36 @@
+  - name:  app_setup
+    ansible.builtin.import_role:
+      name: common
+      tasks_from: app_setup.yaml
+    tags:
+      - deployment
+
+  - name:  nodejs_setup
+    ansible.builtin.include_role:
+      name: common
+      tasks_from: nodejs_setup.yaml
+    tags:
+        - deployment
+
+  - name: copy mongodb repo
+    ansible.builtin.copy:
+      src: mongodb.repo
+      dest: /etc/yum.repos.d/mongodb.repo
+
+  - name: install mongodb client
+    ansible.builtin.package:
+      name: mongodb-mongosh
+      state: present
+
+  - name: check if data related to product is exits in db or not
+    ansible.builtin.command: mongosh {{ MONGODB_HOST }} --quiet --eval "db.getMongo().getDBNames().indexOf('"{{ component }}"')"
+    register: "catalogue_output"
+
+  - name: if not exits load data into product
+    ansible.builtin.command: mongosh --host {{ MONGODB_HOST }} > /app/db/master-data.js
+    when: "catalogue_output.stdout | int < 0"
+
+  - name: import_role and do service setup
+    ansible.builtin.import_role:
+      name: common
+      tasks_from: services_setup
