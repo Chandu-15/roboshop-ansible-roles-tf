@@ -1,5 +1,9 @@
 - name : "setup {{ component }} server"
   hosts: "{{ component }}"
   become: yes
+  tasks:
+    - name: Debug variables
+      debug:
+        msg: "Component is {{ component }} and Env is {{ env }}"
   roles:
     - "{{ component }}"
